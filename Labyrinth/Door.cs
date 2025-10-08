@@ -11,7 +11,11 @@ namespace Labyrinth
         private Key? key;
         private bool isOpen;
 
-        public override bool IsTraversable => isOpen;
+        public Door()
+        {
+            this.key = new Key();
+            this.isOpen = false;
+        }
 
         public Door(Key key)
         {
@@ -19,9 +23,20 @@ namespace Labyrinth
             this.isOpen = false;
         }
 
+        public override bool IsTraversable => isOpen;
+
+        public Key Key
+        {
+            get { return key; }
+        }
+
+        public bool IsOpen
+        {
+            get { return isOpen; }
+        }
         public void Unlock(Key key)
         {
-            if (this.key != null && this.key.Equals(key))
+            if (this.key != null && this.key == key)
             {
                 isOpen = true;
             }

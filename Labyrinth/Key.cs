@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Labyrinth
 {
-    public class Key : Collectable
+    public class Key : ICollectable
     {
         
     }
