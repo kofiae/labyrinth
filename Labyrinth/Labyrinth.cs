@@ -1,6 +1,7 @@
 ﻿using Labyrinth.Crawl;
 using Labyrinth.Tiles;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Labyrinth
 {
@@ -16,7 +17,7 @@ namespace Labyrinth
         {
             _tiles = Build.AsciiParser.Parse(ascii_map);
             if (_tiles.GetLength(0) < 3 || _tiles.GetLength(1) < 3)
-            {
+        {
                 throw new ArgumentException("Labyrinth must be at least 3x3");
             }
         }
@@ -38,9 +39,9 @@ namespace Labyrinth
         public override string ToString()
         {
             var res = new StringBuilder();
-
+            
             for (int y = 0; y < _tiles.GetLength(1); y++)
-            {
+        {
                 for (int x = 0; x < _tiles.GetLength(0); x++)
                 {
                     res.Append(_tiles[x, y] switch
