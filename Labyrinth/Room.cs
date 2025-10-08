@@ -8,10 +8,13 @@ namespace Labyrinth
 {
     internal class Room : Tile
     {
-        private Collectable? item;
+        private ICollectable? item;
         public override bool IsTraversable => true;
 
-        public Collectable Item { get => Item; set => Item = value; }
+        public ICollectable Item { 
+            get => item;
+            set => item = value; 
+        }
 
         public override void Pass()
         {
