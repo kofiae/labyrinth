@@ -59,25 +59,68 @@ public class LabyrinthCrawlerTest
     [Test]
     public void FacingNorthOnUpperTileReturnsOutside()
     {
-        Assert.That(false);
+        var laby = new Labyrinth.Labyrinth("""
+                + +
+                |x|
+                +-+
+                """);
+        var test = laby.NewCrawler();
+
+        test.Walk();
+        
+        Assert.That(test.FacingTile, Is.TypeOf<Outside>());
     }
 
     [Test]
     public void FacingWestOnFarLeftTileReturnsOutside()
     {
-        Assert.That(false);
+        var laby = new Labyrinth.Labyrinth("""
+                +-+
+                 x|
+                +-+
+                """);
+        var test = laby.NewCrawler();
+
+        test.Direction.TurnLeft();
+
+        test.Walk();
+
+        Assert.That(test.FacingTile, Is.TypeOf<Outside>());
     }
 
     [Test]
     public void FacingEastOnFarRightTileReturnsOutside()
     {
-        Assert.That(false);
+        var laby = new Labyrinth.Labyrinth("""
+                +-+
+                |x 
+                +-+
+                """);
+        var test = laby.NewCrawler();
+
+        test.Direction.TurnRight();
+
+        test.Walk();
+
+        Assert.That(test.FacingTile, Is.TypeOf<Outside>());
     }
 
     [Test]
     public void FacingSouthOnBottomTileReturnsOutside()
     {
-        Assert.That(false);
+        var laby = new Labyrinth.Labyrinth("""
+                +-+
+                |x|
+                + +
+                """);
+        var test = laby.NewCrawler();
+
+        test.Direction.TurnRight();
+        test.Direction.TurnRight();
+
+        test.Walk();
+
+        Assert.That(test.FacingTile, Is.TypeOf<Outside>());
     }
     #endregion
 
