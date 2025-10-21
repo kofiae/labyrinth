@@ -28,13 +28,30 @@ public class LabyrinthCrawlerTest
     [Test]
     public void InitWithMultipleXUsesLastOne()
     {
-        Assert.That(false);
+        var laby = new Labyrinth.Labyrinth("""
+                +----+
+                |x  x|
+                +----+
+                """);
+        var test = laby.NewCrawler();
+
+        using var all = Assert.EnterMultipleScope();
+
+        Assert.That(test.X, Is.EqualTo(4));
+        Assert.That(test.Y, Is.EqualTo(1));
     }
 
     [Test]
     public void InitWithNoXThrowsArgumentException()
     {
-        Assert.That(false);
+        Assert.Throws<ArgumentException>(() =>
+        {
+            var laby = new Labyrinth.Labyrinth("""
+                +--+
+                |  |
+                +--+
+                """);
+        });
     }
     #endregion
 
