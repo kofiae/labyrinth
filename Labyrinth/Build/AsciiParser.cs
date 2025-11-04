@@ -4,15 +4,12 @@ namespace Labyrinth.Build
 {
     public class AsciiParser
     {
-        public static (Tile[,] tiles, int startX, int startY) Parse(string ascii_map)
+        public static Tile[,] Parse(string ascii_map, ref (int X, int Y) start)
         {
             var lines = ascii_map.Split("\n,\r\n".Split(','), StringSplitOptions.None);
             var width = lines[0].Length;
             var tiles = new Tile[width, lines.Length];
-            
-            int? startX = null;
-            int? startY = null;
-            
+
             using var km = new Keymaster();
 
             for (int y = 0; y < tiles.GetLength(1); y++)
@@ -25,8 +22,8 @@ namespace Labyrinth.Build
                 {
                     tiles[x, y] = lines[y][x] switch
                     {
+                        'x' => NewStartPos(x, y, out start),
                         ' ' => new Room(),
-                        'x' => HandleStartPosition(x, y, ref startX, ref startY),
                         '+' or '-' or '|' => Wall.Singleton,
                         '/' => km.NewDoor(),
                         'k' => km.NewKeyRoom(),
@@ -34,19 +31,11 @@ namespace Labyrinth.Build
                     };
                 }
             }
-            
-            if (!startX.HasValue || !startY.HasValue)
-            {
-                throw new ArgumentException("Invalid map: no starting position 'x' found.");
-            }
-            
-            return (tiles, startX.Value, startY.Value);
+            return tiles;
         }
-        
-        private static Room HandleStartPosition(int x, int y, ref int? startX, ref int? startY)
+        private static Room NewStartPos(int x, int y, out (int X, int Y) start)
         {
-            startX = x;
-            startY = y;
+            start = (x, y);
             return new Room();
         }
     }

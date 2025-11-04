@@ -1,4 +1,5 @@
 ﻿using Labyrinth.Crawl;
+using Labyrinth.Items;
 using Labyrinth.Tiles;
 
 namespace LabyrinthTest.Crawl;
@@ -6,121 +7,126 @@ namespace LabyrinthTest.Crawl;
 [TestFixture(Description = "Integration test for the crawler implementation in the labyrinth")]
 public class LabyrinthCrawlerTest
 {
+    private static ICrawler NewCrawlerFor(string ascii_map) =>
+        new Labyrinth.Labyrinth(ascii_map).NewCrawler();
+
+    private static void AssertThat(ICrawler test, int x, int y, Direction dir, Type facingTile)
+    {
+        using var all = Assert.EnterMultipleScope();
+
+        Assert.That(test.X, Is.EqualTo(x));
+        Assert.That(test.Y, Is.EqualTo(y));
+        Assert.That(test.Direction, Is.EqualTo(dir));
+        Assert.That(test.FacingTile, Is.TypeOf(facingTile));
+    }
+
     #region Initialization
     [Test]
-    public void InitWithCenteredX()
-    {
-        var laby = new Labyrinth.Labyrinth("""
+    public void InitWithCenteredX() =>
+        AssertThat(
+            NewCrawlerFor("""
                 +--+
                 | x|
                 +--+
-                """);
-        var test = laby.NewCrawler();
-
-        using var all = Assert.EnterMultipleScope();
-
-        Assert.That(test.X, Is.EqualTo(2));
-        Assert.That(test.Y, Is.EqualTo(1));
-        Assert.That(test.Direction, Is.EqualTo(Direction.North));
-        Assert.That(test.FacingTile, Is.TypeOf<Wall>());
-    }
+                """
+            ),
+            x: 2, y: 1,
+            Direction.North,
+            typeof(Wall)
+        );
 
     [Test]
-    public void InitWithMultipleXUsesLastOne()
-    {
-        var laby = new Labyrinth.Labyrinth("""
-                +----+
-                |x  x|
-                +----+
-                """);
-        var test = laby.NewCrawler();
-
-        using var all = Assert.EnterMultipleScope();
-
-        Assert.That(test.X, Is.EqualTo(4));
-        Assert.That(test.Y, Is.EqualTo(1));
-    }
+    public void InitWithMultipleXUsesLastOne() =>
+        AssertThat(
+            NewCrawlerFor("""
+                +--+
+                | x|
+                |x |
+                +--+
+                """
+            ),
+            x: 1, y: 2,
+            Direction.North,
+            typeof(Room)
+        );
 
     [Test]
-    public void InitWithNoXThrowsArgumentException()
-    {
+    public void InitWithNoXThrowsArgumentException() =>
         Assert.Throws<ArgumentException>(() =>
-        {
-            var laby = new Labyrinth.Labyrinth("""
+            new Labyrinth.Labyrinth("""
                 +--+
                 |  |
                 +--+
-                """);
-        });
-    }
+                """
+            )
+        );
     #endregion
 
     #region Labyrinth borders
     [Test]
-    public void FacingNorthOnUpperTileReturnsOutside()
-    {
-        var laby = new Labyrinth.Labyrinth("""
-                + +
-                |x|
+    public void FacingNorthOnUpperTileReturnsOutside() =>
+         AssertThat(
+            NewCrawlerFor("""
+                +x+
+                | |
                 +-+
-                """);
-        var test = laby.NewCrawler();
-
-        test.Walk();
-        
-        Assert.That(test.FacingTile, Is.TypeOf<Outside>());
-    }
+                """
+            ),
+            x: 1, y: 0,
+            Direction.North,
+            typeof(Outside)
+        );
 
     [Test]
     public void FacingWestOnFarLeftTileReturnsOutside()
     {
-        var laby = new Labyrinth.Labyrinth("""
-                +-+
-                 x|
-                +-+
-                """);
-        var test = laby.NewCrawler();
-
+        var test = NewCrawlerFor("""
+            +-+
+            x |
+            +-+
+            """
+        );
         test.Direction.TurnLeft();
-
-        test.Walk();
-
-        Assert.That(test.FacingTile, Is.TypeOf<Outside>());
+        AssertThat(test,
+            x: 0, y: 1,
+            Direction.West,
+            typeof(Outside)
+        );
     }
 
     [Test]
     public void FacingEastOnFarRightTileReturnsOutside()
     {
-        var laby = new Labyrinth.Labyrinth("""
-                +-+
-                |x 
-                +-+
-                """);
-        var test = laby.NewCrawler();
-
+        var test = NewCrawlerFor("""
+            +-+
+            | x
+            +-+
+            """
+        );
         test.Direction.TurnRight();
-
-        test.Walk();
-
-        Assert.That(test.FacingTile, Is.TypeOf<Outside>());
+        AssertThat(test,
+            x: 2, y: 1,
+            Direction.East,
+            typeof(Outside)
+        );
     }
 
     [Test]
     public void FacingSouthOnBottomTileReturnsOutside()
     {
-        var laby = new Labyrinth.Labyrinth("""
-                +-+
-                |x|
-                + +
-                """);
-        var test = laby.NewCrawler();
-
-        test.Direction.TurnRight();
-        test.Direction.TurnRight();
-
-        test.Walk();
-
-        Assert.That(test.FacingTile, Is.TypeOf<Outside>());
+        var test = NewCrawlerFor("""
+            +-+
+            | |
+            +x+
+            """
+        );
+        test.Direction.TurnLeft();
+        test.Direction.TurnLeft();
+        AssertThat(test,
+            x: 1, y: 2,
+            Direction.South,
+            typeof(Outside)
+        );
     }
     #endregion
 
@@ -128,94 +134,93 @@ public class LabyrinthCrawlerTest
     [Test]
     public void TurnLeftFacesWestTile()
     {
-        var laby = new Labyrinth.Labyrinth("""
-                +--+
-                |x |
-                +--+
-                """);
-        var test = laby.NewCrawler();
-
-        Assert.That(test.FacingTile, Is.TypeOf<Wall>());
-
+        var test = NewCrawlerFor("""
+            +---+
+            |/xk|
+            +---+
+            """
+        );
         test.Direction.TurnLeft();
-
-        Assert.That(test.FacingTile, Is.TypeOf<Wall>());
-        Assert.That(test.Direction, Is.EqualTo(Direction.West));
+        AssertThat(test,
+            x: 2, y: 1,
+            Direction.West,
+            typeof(Door)
+        );
     }
-
     [Test]
     public void WalkReturnsInventoryAndChangesPositionAndFacingTile()
     {
-        var laby = new Labyrinth.Labyrinth("""
-                +---+
-                |x  |
-                +---+
-                """);
-        var test = laby.NewCrawler();
-
-        Assert.That(test.X, Is.EqualTo(1));
-        Assert.That(test.Y, Is.EqualTo(1));
-        Assert.That(test.Direction, Is.EqualTo(Direction.North));
-        Assert.That(test.FacingTile, Is.TypeOf<Wall>());
-
-        test.Direction.TurnRight();
-        Assert.That(test.FacingTile, Is.TypeOf<Room>());
-
+        var test = NewCrawlerFor("""
+            +/-+
+            |  |
+            |xk|
+            +--+
+            """
+        );
         var inventory = test.Walk();
 
-        using var all = Assert.EnterMultipleScope();
-
-        Assert.That(test.X, Is.EqualTo(2));
-        Assert.That(test.Y, Is.EqualTo(1));
-        Assert.That(test.Direction, Is.EqualTo(Direction.East));
-        Assert.That(test.FacingTile, Is.TypeOf<Room>());
-        Assert.That(inventory, Is.Not.Null);
+        Assert.That(inventory.HasItem, Is.False);
+        AssertThat(test,
+            x: 1, y: 1,
+            Direction.North,
+            typeof(Door)
+        );
     }
 
     [Test]
     public void TurnAndWalkReturnsInventoryChangesPositionAndFacingTile()
     {
-        var laby = new Labyrinth.Labyrinth("""
-                +---+
-                |x  |
-                |   |
-                +---+
-                """);
-        var test = laby.NewCrawler();
-
-        Assert.That(test.X, Is.EqualTo(1));
-        Assert.That(test.Y, Is.EqualTo(1));
-
+        var test = NewCrawlerFor("""
+            +--+
+            |x |
+            +--+
+            """
+        );
         test.Direction.TurnRight();
-        test.Direction.TurnRight();
-        Assert.That(test.Direction, Is.EqualTo(Direction.South));
-        Assert.That(test.FacingTile, Is.TypeOf<Room>());
 
         var inventory = test.Walk();
 
-        using var all = Assert.EnterMultipleScope();
-
-        Assert.That(test.X, Is.EqualTo(1));
-        Assert.That(test.Y, Is.EqualTo(2));
-        Assert.That(test.Direction, Is.EqualTo(Direction.South));
-        Assert.That(test.FacingTile, Is.TypeOf<Wall>());
-        Assert.That(inventory, Is.Not.Null);
+        Assert.That(inventory.HasItem, Is.False);
+        AssertThat(test,
+            x: 2, y: 1,
+            Direction.East,
+            typeof(Wall)
+        );
     }
 
     [Test]
-    public void WalkOnNonTraversableTileThrowsInvalidOperationException()
+    public void WalkOnNonTraversableTileThrowsInvalidOperationExceptionAndDontMove()
     {
-        var laby = new Labyrinth.Labyrinth("""
-                +--+
-                |x |
-                +--+
-                """);
-        var test = laby.NewCrawler();
-
-        Assert.That(test.FacingTile, Is.TypeOf<Wall>());
-        Assert.That(test.FacingTile.IsTraversable, Is.False);
-
+        var test = NewCrawlerFor("""
+            +--+
+            |/-+
+            |xk|
+            +--+
+            """
+        );
         Assert.Throws<InvalidOperationException>(() => test.Walk());
+        AssertThat(test,
+            x: 1, y: 2,
+            Direction.North,
+            typeof(Door)
+        );
+    }
+
+    [Test]
+    public void WalkOutsideThrowsInvalidOperationExceptionAndDontMove()
+    {
+        var test = NewCrawlerFor("""
+            |x|
+            | |
+            +-+
+            """
+        );
+        Assert.Throws<InvalidOperationException>(() => test.Walk());
+        AssertThat(test,
+            x: 1, y: 0,
+            Direction.North,
+            typeof(Outside)
+        );
     }
     #endregion
 
@@ -223,44 +228,38 @@ public class LabyrinthCrawlerTest
     [Test]
     public void WalkInARoomWithAnItem()
     {
-        var laby = new Labyrinth.Labyrinth("""
-                +--+
-                |xk|
-                +-/+
-                """);
-        var test = laby.NewCrawler();
-
-        test.Direction.TurnRight();
-        Assert.That(test.FacingTile, Is.TypeOf<Room>());
-
+        var test = NewCrawlerFor("""
+        +---+
+        |  k|
+        |/ x|
+        +---+
+        """
+        );
         var inventory = test.Walk();
 
         using var all = Assert.EnterMultipleScope();
 
-        Assert.That(test.X, Is.EqualTo(2));
-        Assert.That(test.Y, Is.EqualTo(1));
-        Assert.That(inventory, Is.Not.Null);
         Assert.That(inventory.HasItem, Is.True);
+        Assert.That(inventory.ItemType, Is.EqualTo(typeof(Key)));
     }
 
     [Test]
     public void WalkUseAWrongKeyToOpenADoor()
     {
-        var laby = new Labyrinth.Labyrinth("""
-                +--+
-                |xk|
-                +-/+
-                |k |
-                +-/+
-                """);
-        var test = laby.NewCrawler();
+        var test = NewCrawlerFor("""
+            +---+
+            |/ k|
+            |k  |
+            |x /|
+            +---+
+            """);
+        var inventory = test.Walk();
+        var door = (Door)test.FacingTile;
 
-        test.Direction.TurnRight();
-        var inventory1 = test.Walk();
-
-        Assert.That(inventory1.HasItem, Is.True);
-
-        Assert.That(inventory1, Is.Not.Null);
+        Assert.That(door.Open(inventory), Is.False);
+        Assert.That(door.IsLocked, Is.True);
+        Assert.That(door.IsTraversable, Is.False);
+        Assert.That(inventory.HasItem, Is.True);
     }
 
     [Test]
