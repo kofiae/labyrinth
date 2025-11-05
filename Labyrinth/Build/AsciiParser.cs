@@ -1,12 +1,17 @@
-﻿using Labyrinth.Tiles;
+﻿using System;
+using Labyrinth.Tiles;
 
 namespace Labyrinth.Build
 {
     public class AsciiParser
     {
-        public static Tile[,] Parse(string ascii_map, ref (int X, int Y) start)
+        public event EventHandler<StartEventArgs>? StartPositionFound;
+
+        public Tile[,] Parse(string ascii_map)
         {
+            if (ascii_map is null) throw new ArgumentNullException(nameof(ascii_map));
             var lines = ascii_map.Split("\n,\r\n".Split(','), StringSplitOptions.None);
+            if (lines.Length == 0) return new Tile[0, 0]; // <-- correction : tableau multidimensionnel vide
             var width = lines[0].Length;
             var tiles = new Tile[width, lines.Length];
 
@@ -14,28 +19,31 @@ namespace Labyrinth.Build
 
             for (int y = 0; y < tiles.GetLength(1); y++)
             {
-                if (lines[y].Length != width)
-                {
-                    throw new ArgumentException("Invalid map: all lines must have the same length.");
-                }
+                var line = lines[y] ?? string.Empty;
+                if (line.Length < width)
+                    line = line.PadRight(width, ' ');
+
                 for (int x = 0; x < tiles.GetLength(0); x++)
                 {
-                    tiles[x, y] = lines[y][x] switch
+                    var ch = line[x];
+                    tiles[x, y] = ch switch
                     {
-                        'x' => NewStartPos(x, y, out start),
+                        'x' => CreateStart(x, y),
                         ' ' => new Room(),
                         '+' or '-' or '|' => Wall.Singleton,
                         '/' => km.NewDoor(),
                         'k' => km.NewKeyRoom(),
-                        _ => throw new ArgumentException($"Invalid map: unknown character '{lines[y][x]}' at line {y}, col {x}.")
+                        _ => throw new ArgumentException($"Invalid map: unknown character '{ch}' at line {y}, col {x}.")
                     };
                 }
             }
+
             return tiles;
         }
-        private static Room NewStartPos(int x, int y, out (int X, int Y) start)
+
+        private Tile CreateStart(int x, int y)
         {
-            start = (x, y);
+            StartPositionFound?.Invoke(this, new StartEventArgs(x, y));
             return new Room();
         }
     }
