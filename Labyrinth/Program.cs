@@ -5,7 +5,7 @@ using Labyrinth.Sys;
 char DirToChar(Direction dir) =>
     "^<v>"[dir.DeltaX * dir.DeltaX + dir.DeltaX + dir.DeltaY + 1];
 
-void DrawExplorer(object? sender, CrawlingEventArgs e)
+void DrawExplorer(object? sender, Labyrinth.Crawl.CrawlingEventArgs e)
 {
     Console.SetCursorPosition(e.X, e.Y);
     Console.Write(DirToChar(e.Direction));
