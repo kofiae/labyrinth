@@ -28,7 +28,11 @@ namespace Labyrinth
                 if (_crawler.FacingTile.IsTraversable
                     && _rnd.Next() == Actions.Walk)
                 {
-                    _crawler.Walk().SwapItems(bag);
+                    var roomInventory = _crawler.Walk();
+                    while (roomInventory.HasItems)
+                    {
+                        bag.MoveItemFrom(roomInventory);
+                    }
                     changeEvent = PositionChanged;
                 }
                 else
@@ -36,14 +40,42 @@ namespace Labyrinth
                     _crawler.Direction.TurnLeft();
                     changeEvent = DirectionChanged;
                 }
-                if (_crawler.FacingTile is Door door && door.IsLocked
-                    && bag.HasItems && bag.ItemTypes.First() == typeof(Key))
+                
+                if (_crawler.FacingTile is Door door && door.IsLocked && bag.HasItems)
                 {
-                    door.Open(bag);
+                    TryOpenDoor(door, bag);
                 }
+                
                 changeEvent?.Invoke(this, new CrawlingEventArgs(_crawler));
             }
             return n;
+        }
+
+        private void TryOpenDoor(Door door, MyInventory bag)
+        {
+            if (!bag.HasItems)
+            {
+                return;
+            }
+            
+            int totalItems = bag.Items.Count();
+            int attempts = 0;
+            
+            while (door.IsLocked && attempts < totalItems)
+            {
+                var firstItemBefore = bag.Items.First();
+                
+                door.Open(bag);
+                
+                if (door.IsLocked && bag.HasItems && bag.Items.First() == firstItemBefore)
+                {
+                    var temp = new MyInventory();
+                    temp.MoveItemFrom(bag, 0);
+                    bag.MoveItemFrom(temp, 0);
+                }
+                
+                attempts++;
+            }
         }
 
         public event EventHandler<CrawlingEventArgs>? PositionChanged;
