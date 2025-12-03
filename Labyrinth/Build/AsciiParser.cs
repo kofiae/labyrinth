@@ -5,8 +5,6 @@ namespace Labyrinth.Build
 {
     public class AsciiParser
     {
-        public event EventHandler<StartEventArgs>? StartPositionFound;
-
         public Tile[,] Parse(string ascii_map)
         {
             if (ascii_map is null) throw new ArgumentNullException(nameof(ascii_map));
@@ -28,7 +26,7 @@ namespace Labyrinth.Build
                     var ch = line[x];
                     tiles[x, y] = ch switch
                     {
-                        'x' => CreateStart(x, y),
+                        'x' => NewStartPos(x, y),
                         ' ' => new Room(),
                         '+' or '-' or '|' => Wall.Singleton,
                         '/' => km.NewDoor(),
@@ -40,8 +38,9 @@ namespace Labyrinth.Build
 
             return tiles;
         }
+        public EventHandler<StartEventArgs>? StartPositionFound;
 
-        private Tile CreateStart(int x, int y)
+        private Room NewStartPos(int x, int y)
         {
             StartPositionFound?.Invoke(this, new StartEventArgs(x, y));
             return new Room();

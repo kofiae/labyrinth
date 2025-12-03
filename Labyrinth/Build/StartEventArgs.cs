@@ -2,15 +2,14 @@ using System;
 
 namespace Labyrinth.Build
 {
-    public class StartEventArgs : EventArgs
-    {
-        public StartEventArgs(int x, int y)
-        {
-            X = x;
-            Y = y;
-        }
-
-        public int X { get; }
-        public int Y { get; }
+	/// <summary>
+	/// Provides data for an event that is triggered when a start position is found.
+	/// </summary>
+	/// <param name="x">X coordinate of the starting position</param>
+	/// <param name="y">Y coordinate of the starting position</param>
+	public class StartEventArgs(int x, int y) : EventArgs
+	{
+		public int X { get; } = x;
+		public int Y { get; } = y;
     }
 }
