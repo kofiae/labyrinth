@@ -5,6 +5,7 @@ namespace Labyrinth.Build
 {
     /// <summary>
     /// Manage the creation of doors and key rooms ensuring each door has a corresponding key room.
+    /// Supports arbitrary distribution and ordering of doors and keys.
     /// </summary>
     public sealed class Keymaster : IDisposable
     {
@@ -14,56 +15,47 @@ namespace Labyrinth.Build
         /// <exception cref="InvalidOperationException">Some keys are missing or are not placed.</exception>
         public void Dispose()
         {
-            if (unplacedKey.HasItem || emptyKeyRoom is not null)
+            if (keysPool.HasItems || emptyKeyRooms.Count > 0)
             {
                 throw new InvalidOperationException("Unmatched key/door creation");
             }
         }
 
         /// <summary>
-        /// Create a new door and place its key in a previously created empty key room (if any).
+        /// Create a new door and add its key to the pool. Keys are placed into pending key rooms when available.
         /// </summary>
         /// <returns>Created door</returns>
-        /// <exception cref="NotSupportedException">Multiple doors before key placement</exception>
         public Door NewDoor()
         {
-            if (unplacedKey.HasItem)
-            {
-                throw new NotSupportedException("Unable to handle multiple doors before key placement");
-            }
             var door = new Door();
 
-            door.LockAndTakeKey(unplacedKey);
-            PlaceKey();
+            door.LockAndTakeKey(keysPool);
+            PlaceKeys();
             return door;
         }
 
         /// <summary>
-        /// Create a new room with key and place the key if a door was previously created.
+        /// Create a new room reserved to host a key and add it to the pending list. Keys are placed when available.
         /// </summary>
         /// <returns>Created key room</returns>
-        /// <exception cref="NotSupportedException">Multiple keyss before key placement</exception>
         public Room NewKeyRoom()
         {
-            if (emptyKeyRoom is not null)
-            {
-                throw new NotSupportedException("Unable to handle multiple keys before door creation");
-            }
-            var room = emptyKeyRoom = new Room();
-            PlaceKey();
+            var room = new Room();
+            emptyKeyRooms.Enqueue(room);
+            PlaceKeys();
             return room;
         }
 
-        private void PlaceKey()
+        private void PlaceKeys()
         {
-            if (unplacedKey.HasItem && emptyKeyRoom is not null)
+            while (keysPool.HasItems && emptyKeyRooms.Count > 0)
             {
-                emptyKeyRoom.Pass().MoveItemFrom(unplacedKey);
-                emptyKeyRoom = null;
+                var room = emptyKeyRooms.Dequeue();
+                room.Pass().MoveItemFrom(keysPool);
             }
         }
 
-        private readonly MyInventory unplacedKey = new();
-        private Room? emptyKeyRoom = null;
+        private readonly MyInventory keysPool = new();
+        private readonly Queue<Room> emptyKeyRooms = new();
     }
 }
